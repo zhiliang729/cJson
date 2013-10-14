@@ -188,25 +188,30 @@ static unsigned parse_hex4(const char *str)
 static const unsigned char firstByteMark[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
 static const char *parse_string(cJSON *item,const char *str)
 {PRINT
-	const char *ptr=str+1;char *ptr2;char *out;int len=0;unsigned uc,uc2;
-	if (*str!='\"')
+	const char *ptr=str+1;
+    char *ptr2;
+    char *out;
+    int len=0;
+    unsigned uc,uc2;
+    
+	if (*str!='\"')//如果第一个字符不是"，则不是字符串， 报错
     {
         ep=str;
         return 0;
     }	/* not a string! */
 	
-	while (*ptr!='\"' && *ptr && ++len)
-        if (*ptr++ == '\\')
+	while (*ptr!='\"' && *ptr && ++len)//在ptr不为空的情况下，截取到下一个",并统计字符个数
+        if (*ptr++ == '\\')//若下个字符为\，则跳过接下来的两个字符,也就是跳过了\"这两个字符
             ptr++;	/* Skip escaped quotes. */
 	
-	out=(char*)cJSON_malloc(len+1);	/* This is how long we need for the string, roughly. */
+	out=(char*)cJSON_malloc(len+1);	/* This is how long we need for the string, roughly.分配len+1的长度内存，用来保存len个字符 */
 	if (!out)
         return 0;
 	
-	ptr=str+1;
+	ptr=str+1;//又将ptr指向了原来位置，同时将ptr2指向了解析出的字符串
     ptr2=out;
     
-	while (*ptr!='\"' && *ptr)
+	while (*ptr!='\"' && *ptr)//若不是"而且不为空，则
 	{
 		if (*ptr!='\\')
             *ptr2++=*ptr++;
@@ -248,7 +253,7 @@ static const char *parse_string(cJSON *item,const char *str)
 			ptr++;
 		}
 	}
-	*ptr2=0;
+	*ptr2=0;//指针置空
 	if (*ptr=='\"') ptr++;
 	item->valuestring=out;
 	item->type=cJSON_String;
@@ -508,15 +513,18 @@ static const char *parse_object(cJSON *item,const char *value)
     }	/* not an object! 不是object*/
 	
 	item->type=cJSON_Object;
-    printf("%s", value);
+    printf("%s\n", value);
 	value=skip(value+1);//将{以及一些非法字符跳过，value+1指针移动   （value+1）为去掉{后的文本
-    printf("%s", value);
+    printf("%s\n", value);
     
 	if (*value=='}')
-        return value+1;	/* empty array. {之后就是}说明为空对象*/
-	
-	item->child=child=cJSON_New_Item();
-	if (!item->child) return 0;
+        return value+1;	/* empty array. }说明为一个对象object结束，故返回}后的剩余字符串*/
+    
+	child=cJSON_New_Item();
+	item->child=child;
+	if (!item->child)
+        return 0;//若为分配成功则出错
+    
 	value=skip(parse_string(child,skip(value)));
 	if (!value) return 0;
 	child->string=child->valuestring;child->valuestring=0;
